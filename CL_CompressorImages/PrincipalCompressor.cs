@@ -4,6 +4,9 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Client;
 using System;
 using System.IO;
+using System.Linq;
+using KFC.Entities;
+using Newtonsoft.Json;
 
 namespace CL_CompressorImages
 {
@@ -17,7 +20,17 @@ namespace CL_CompressorImages
             IOrganizationService service = factory.CreateOrganizationService(context.UserId);
             OrganizationServiceContext orgContext = new OrganizationServiceContext(service);
 
+            /*KFCContext newContext = new KFCContext(service);
 
+            string id = (string)context.InputParameters["bit_entradacompresormerged"];
+            var evaluacion = newContext.bit_EvaluacionSet.Where(x => x.Id == Guid.Parse(id)).FirstOrDefault();
+
+            //transformar a json
+            var json = JsonConvert.SerializeObject(evaluacion);
+
+            context.OutputParameters["bit_salidacompresormerged"] = json;
+            */
+            /*
             try
             {
                 if (context.MessageName.Equals("bit_compresormerged") && context.Stage.Equals(30))
@@ -50,7 +63,7 @@ namespace CL_CompressorImages
             {
                 tracingService.Trace("Error en bit_compresorimagenes: {0}", ex.ToString());
                 throw new InvalidPluginExecutionException("Ocurrió un error en bit_compresorimagenes. " + ex.Message, ex);
-            }
+            }*/
         }
 
         private byte[] CompressImage(byte[] imageBytes, int quality)
