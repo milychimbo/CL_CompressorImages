@@ -184,7 +184,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="KFCEntities.cs" />
+    <Compile Include="KFC.EntitiesResp.cs" />
     <Compile Include="PrincipalCompressor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
