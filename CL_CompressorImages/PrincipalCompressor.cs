@@ -1,4 +1,6 @@
-﻿using Microsoft.Xrm.Sdk;
+﻿using ImageProcessor;
+using ImageProcessor.Imaging.Formats;
+using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Client;
 using System;
 using System.IO;
@@ -15,22 +17,21 @@ namespace CL_CompressorImages
             IOrganizationService service = factory.CreateOrganizationService(context.UserId);
             OrganizationServiceContext orgContext = new OrganizationServiceContext(service);
 
+
             try
             {
-                if (context.MessageName.Equals("bit_compresorimagenes") && context.Stage.Equals(30))
-                // Verificar si hay datos en los parámetros de entrada
-                //if (context.InputParameters.Contains("image") && context.InputParameters["image"] is string image)
+                if (context.MessageName.Equals("bit_compresormerged") && context.Stage.Equals(30))
                 {
-                    string image = (string)context.InputParameters["image"];
+                    string image = (string)context.InputParameters["bit_entradacompresormerged"];
 
+                    tracingService.Trace("Ingreso: {0}", image);
 
-                    tracingService.Trace("ingreso: {0}", image);
                     // Convertir de Base64 a Bytes
                     byte[] originalImageBytes = Convert.FromBase64String(image);
                     int originalSize = originalImageBytes.Length;
 
                     // Comprimir la imagen
-                    byte[] compressedImageBytes = CompressImage(originalImageBytes, 75L); // Calidad al 75%
+                    byte[] compressedImageBytes = CompressImage(originalImageBytes, 75); // Calidad al 75%
 
                     int compressedSize = compressedImageBytes.Length;
 
@@ -40,43 +41,48 @@ namespace CL_CompressorImages
 
                     // Convertir de nuevo los bytes comprimidos a Base64
                     image = Convert.ToBase64String(compressedImageBytes);
-                    tracingService.Trace("salida: {0}", image);
-                   
-                    context.OutputParameters["image"] = image;
+                    tracingService.Trace("Salida: {0}", image);
 
+                    context.OutputParameters["bit_salidacompresormerged"] = image;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                tracingService.Trace("bit_compresorimagenes: {0}", ex.ToString());
-                throw new InvalidPluginExecutionException("An error occurred in bit_compresorimagenes. " + ex.Message, ex);
+                tracingService.Trace("Error en bit_compresorimagenes: {0}", ex.ToString());
+                throw new InvalidPluginExecutionException("Ocurrió un error en bit_compresorimagenes. " + ex.Message, ex);
             }
-            
         }
 
-        private byte[] CompressImage(byte[] imageBytes, long quality)
+        private byte[] CompressImage(byte[] imageBytes, int quality)
         {
-            // Validar la calidad (0-100)
             if (quality < 1 || quality > 100)
-                throw new ArgumentOutOfRangeException(nameof(quality), "Quality must be between 1 and 100.");
+                throw new ArgumentOutOfRangeException(nameof(quality), "La calidad debe estar entre 1 y 100.");
 
-            // Usar ImageProcessor para comprimir la imagen
-            using (var inStream = new MemoryStream(imageBytes))
-            using (var outStream = new MemoryStream())
+            using (var processor = new ImageFactory(preserveExifData: false))
             {
-                // Crear instancia del procesador de imágenes
-                using (var imageFactory = new ImageProcessor.ImageFactory())
+                using (var stream = new MemoryStream(imageBytes))
                 {
-                    // Cargar la imagen, ajustar la calidad y guardar en el stream de salida
-                    imageFactory.Load(inStream)
-                                .Quality((int)quality) // Establecer la calidad
-                                .Save(outStream);
-                }
+                    // Cargar la imagen
+                    processor.Load(stream);
 
-                return outStream.ToArray();
+                    // Redimensionar la imagen si es demasiado grande
+                    int maxDimension = 1024; // Limitar el tamaño máximo de la imagen a 1024px
+                    if (processor.Image.Width > maxDimension || processor.Image.Height > maxDimension)
+                    {
+                        processor.Resize(new System.Drawing.Size(maxDimension, maxDimension));
+                    }
+
+                    // Ajustar la calidad de compresión
+                    processor.Format(new JpegFormat { Quality = quality });
+
+                    // Guardar la imagen comprimida a un nuevo stream
+                    using (var outputStream = new MemoryStream())
+                    {
+                        processor.Save(outputStream);
+                        return outputStream.ToArray();
+                    }
+                }
             }
         }
-
-
     }
 }
