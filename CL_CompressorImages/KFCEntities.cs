@@ -20210,7 +20210,6 @@ namespace KFC.Entities
 			}
 		}
 		*/
-		
 		[Microsoft.Xrm.Sdk.AttributeLogicalNameAttribute("createdby")]
 		public Microsoft.Xrm.Sdk.EntityReference CreatedBy
 		{

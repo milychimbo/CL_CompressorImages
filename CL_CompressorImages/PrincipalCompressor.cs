@@ -30,7 +30,6 @@ namespace CL_CompressorImages
 
             context.OutputParameters["bit_salidacompresormerged"] = json;
             */
-            
             /*
             try
             {
